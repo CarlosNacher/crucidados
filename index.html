@@ -1,0 +1,712 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#E9F1F7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#111C2E" media="(prefers-color-scheme: dark)">
+<title>Crucidados</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&family=Rubik:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#E9F1F7; --gridf:rgba(110,150,195,.20); --grid:#BCD2E4; --ink:#1D3C8F; --onink:#FFFFFF;
+  --text:#1B2433; --muted:#56667C; --die:#D7302A; --cell:#FAFCFE; --space:#2B3A55;
+  --card:#FFFFFF; --line:#C9D9E6; --hi:#F6C744; --hisoft:rgba(246,199,68,.38);
+  --ok:#1E8048; --oksoft:rgba(30,128,72,.12); --bad:#C2352E;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --paper:#111C2E; --gridf:rgba(120,160,220,.09); --grid:#2B3F5F; --ink:#9CC3FF; --onink:#0E1828;
+    --text:#E6EDF7; --muted:#93A3BA; --die:#E5463F; --cell:#16233A; --space:#C7D3E6;
+    --card:#1A2840; --line:#2B3F5F; --hi:#E8B930; --hisoft:rgba(232,185,48,.28);
+    --ok:#4CC38A; --oksoft:rgba(76,195,138,.14); --bad:#FF6B60; color-scheme:dark;
+  }
+}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%}
+body{
+  font-family:Rubik,system-ui,-apple-system,"Segoe UI",sans-serif;color:var(--text);
+  background-color:var(--paper);
+  background-image:linear-gradient(var(--gridf) 1px,transparent 1px),linear-gradient(90deg,var(--gridf) 1px,transparent 1px);
+  background-size:22px 22px;background-attachment:fixed;
+  -webkit-tap-highlight-color:transparent;
+}
+#app{max-width:460px;margin:0 auto;padding:calc(14px + env(safe-area-inset-top,0px)) 16px calc(28px + env(safe-area-inset-bottom,0px))}
+h1{font-family:"Patrick Hand",cursive;font-weight:400;font-size:46px;line-height:1;margin:0;color:var(--ink)}
+h2{font-size:19px;margin:22px 0 10px;font-weight:700}
+p{line-height:1.45;margin:0 0 12px}
+.lead{color:var(--muted);margin:14px 0 22px;font-size:17px}
+.muted{color:var(--muted)}
+.err{color:var(--bad);min-height:1.4em;margin-top:10px}
+.brand{display:flex;align-items:center;gap:14px;margin-top:18px}
+.field{display:block;margin-bottom:14px}
+.field span{display:block;font-size:15px;color:var(--muted);margin-bottom:6px}
+input{
+  width:100%;font:500 18px Rubik,system-ui,sans-serif;padding:13px 14px;border-radius:12px;
+  border:2px solid var(--line);background:var(--card);color:var(--text);
+}
+input:focus{outline:none;border-color:var(--ink)}
+.btn{
+  display:block;width:100%;font:500 17px Rubik,system-ui,sans-serif;padding:14px 16px;border-radius:12px;
+  border:2px solid var(--ink);background:var(--card);color:var(--ink);cursor:pointer;margin-top:10px;
+}
+.btn.primary{background:var(--ink);color:var(--onink)}
+.btn.ghost{border-color:transparent;background:transparent;text-decoration:underline;text-underline-offset:3px}
+.btn.small{display:inline-block;width:auto;font-size:15px;padding:8px 12px;margin-top:8px}
+.btn:disabled{opacity:.4;cursor:default}
+button:focus-visible,input:focus-visible{outline:3px solid var(--hi);outline-offset:2px}
+.join{display:grid;grid-template-columns:1fr auto;gap:10px;margin-top:10px}
+.join input{text-transform:uppercase;letter-spacing:.2em;text-align:center}
+.join .btn{margin-top:0;width:auto;padding-inline:22px}
+details.rules{margin-top:26px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+details.rules summary{cursor:pointer;font-weight:500}
+details.rules p{margin-top:10px;font-size:15px}
+
+/* dado */
+.die{
+  width:84px;height:84px;flex:none;border-radius:18px;background:var(--die);color:#fff;border:0;
+  font:700 44px Rubik,system-ui,sans-serif;display:grid;place-items:center;
+  box-shadow:inset 0 -6px 0 rgba(0,0,0,.18),0 6px 14px rgba(140,25,20,.25);
+}
+.die.mini{width:46px;height:46px;font-size:26px;border-radius:11px;box-shadow:inset 0 -4px 0 rgba(0,0,0,.18)}
+.die.tap{cursor:pointer;animation:nudge 1.6s ease-in-out infinite}
+.die.roll{animation:tumble .65s cubic-bezier(.3,1.5,.5,1)}
+@keyframes tumble{0%{transform:rotate(-220deg) scale(.55)}100%{transform:none}}
+@keyframes nudge{0%,70%,100%{transform:none}80%{transform:rotate(-8deg)}90%{transform:rotate(6deg)}}
+@media (prefers-reduced-motion: reduce){.die.tap,.die.roll{animation:none}}
+
+.top{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px}
+.code{font:700 15px Rubik,system-ui,sans-serif;letter-spacing:.15em;color:var(--muted)}
+.players{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px}
+.pl{font-size:14px;padding:5px 11px;border-radius:999px;border:1.5px solid var(--line);background:var(--card)}
+.pl.on{border-color:var(--die);color:var(--die);font-weight:700}
+.pl.ok::after{content:" ✓";color:var(--ok)}
+.turn{display:flex;align-items:center;gap:14px;margin-bottom:14px;min-height:84px}
+.turn .status{font-size:18px;font-weight:500;margin:0 0 4px}
+.turn .msg{font-size:15px;color:var(--muted);margin:0}
+
+/* cuadrícula */
+.board{
+  display:grid;grid-template-columns:repeat(8,1fr);width:100%;aspect-ratio:1;
+  border:2px solid var(--ink);border-radius:6px;overflow:hidden;background:var(--cell);
+}
+.board.mini{max-width:220px;margin:10px auto 4px;border-width:1.5px}
+.cell{
+  all:unset;display:flex;align-items:center;justify-content:center;
+  border-right:1px solid var(--grid);border-bottom:1px solid var(--grid);
+  font-family:"Patrick Hand",cursive;font-size:clamp(22px,7vw,32px);color:var(--ink);line-height:1;
+}
+.board.mini .cell{font-size:15px}
+.cell:nth-child(8n){border-right:0}
+.cell:nth-last-child(-n+8){border-bottom:0}
+.cell.sp{background:repeating-linear-gradient(45deg,var(--space) 0 1.5px,transparent 1.5px 6px);opacity:.75}
+.cell.fresh{background-color:var(--hisoft)}
+.cell.fresh.sp{background:repeating-linear-gradient(45deg,var(--space) 0 1.5px,var(--hisoft) 1.5px 6px)}
+.cell.open{cursor:pointer}
+.cell.inword{background-color:var(--oksoft)}
+.cell:focus-visible{outline:3px solid var(--hi);outline-offset:-3px}
+
+/* fichas para colocar */
+.panel{margin-top:16px}
+.panel .hint{text-align:center;color:var(--muted);font-size:15px;margin-bottom:10px}
+.tray{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+.chip{
+  width:52px;height:52px;border-radius:10px;border:2px solid var(--ink);background:var(--card);color:var(--ink);
+  font:400 30px "Patrick Hand",cursive;cursor:pointer;display:grid;place-items:center;
+}
+.chip.sel{background:var(--hi);border-color:var(--hi);color:#1B2433}
+.chip.used{opacity:.3}
+.chip.empty{border-style:dashed;color:var(--muted)}
+
+/* teclado */
+.kb{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-top:12px}
+.key{
+  font:400 25px "Patrick Hand",cursive;padding:7px 0;border-radius:9px;border:1.5px solid var(--line);
+  background:var(--card);color:var(--ink);cursor:pointer;
+}
+.key.sp{font-family:Rubik,system-ui,sans-serif;font-size:14px;grid-column:span 2}
+.key:disabled{opacity:.35}
+
+/* puntuación */
+.words{display:flex;flex-wrap:wrap;gap:6px}
+.word{
+  font:400 22px "Patrick Hand",cursive;padding:4px 11px;border-radius:9px;
+  border:1.5px solid var(--ok);color:var(--ok);background:var(--card);cursor:pointer;
+}
+.word.no{border-color:var(--bad);color:var(--bad);text-decoration:line-through}
+.word[disabled]{cursor:default}
+.list{list-style:none;padding:0;margin:0}
+.list li{display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:1px solid var(--line)}
+.rank{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:12px}
+.rank .head{display:flex;justify-content:space-between;align-items:baseline}
+.rank .pts{font:700 30px Rubik,system-ui,sans-serif;color:var(--ink)}
+.rank.first{border:2px solid var(--die)}
+.rank .why{font-size:14px;color:var(--muted);margin:4px 0 0}
+.x{all:unset;cursor:pointer;color:var(--muted);padding:0 6px;font-size:20px}
+.setup{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin-top:20px}
+.setup ol{padding-left:20px;margin:0}
+.setup li{margin-bottom:8px;line-height:1.45}
+code{font-size:.9em;background:var(--paper);padding:1px 5px;border-radius:5px}
+</style>
+</head>
+<body>
+<main id="app"><p class="muted" style="margin-top:40px">Cargando…</p></main>
+
+<script type="module">
+const FB_VER = '10.12.2';
+// Caras del dado de acción: 0 = pierde turno, 1–3 = el jugador elige esas letras, ★ = letra al azar
+const FACES = [0, 1, 2, 3, '★', '★'];
+// Frecuencia aproximada de letras en español para la letra al azar
+const FREQ = {A:117,B:14,C:47,D:59,E:125,F:7,G:10,H:7,I:63,J:4,K:1,L:50,M:32,N:67,'Ñ':3,O:87,P:25,Q:9,R:69,S:80,T:46,U:39,V:9,W:1,X:2,Y:9,Z:5};
+const LETTERS = 'ABCDEFGHIJKLMNÑOPQRSTUVWXYZ'.split('');
+const EMPTY = '.'.repeat(64);
+const MAX_PLAYERS = 8;
+
+const app = document.getElementById('app');
+const LS = {
+  get: k => { try { return localStorage.getItem(k); } catch (e) { return null; } },
+  set: (k, v) => { try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k, v); } catch (e) {} }
+};
+let pid = LS.get('cd_pid');
+if (!pid) { pid = Math.random().toString(36).slice(2, 10); LS.set('cd_pid', pid); }
+let myName = LS.get('cd_name') || '';
+
+let fb, db, code = null, room = null, unsub = null;
+let local = { seq: null, placed: {}, sel: 0, chosen: [], actFor: false };
+let lastRollSeen = null, advancingSeq = null, resultsSet = false, wakeLock = null;
+
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const show = ch => ch === '#' ? '■' : ch;
+const countEmpty = b => (b || EMPTY).split('').filter(c => c === '.').length;
+const nameOf = p => room?.players?.[p]?.name || 'Alguien';
+const roomRef = (path = '') => fb.ref(db, `rooms/${code}${path ? '/' + path : ''}`);
+const randInt = n => Math.floor(Math.random() * n);
+function randLetter() {
+  const total = Object.values(FREQ).reduce((a, b) => a + b, 0);
+  let r = Math.random() * total;
+  for (const [k, v] of Object.entries(FREQ)) { r -= v; if (r < 0) return k; }
+  return 'E';
+}
+function randCode() {
+  const A = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
+  return Array.from({ length: 4 }, () => A[randInt(A.length)]).join('');
+}
+function shuffle(a) { for (let i = a.length - 1; i > 0; i--) { const j = randInt(i + 1); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+
+/* ---------- configuración de Firebase (config.txt) ---------- */
+async function loadConfig() {
+  let r;
+  try { r = await fetch('config.txt?v=' + Date.now(), { cache: 'no-store' }); } catch (e) { throw new Error('nofile'); }
+  if (!r.ok) throw new Error('nofile');
+  const t = await r.text();
+  const cfg = {};
+  const re = /["']?(\w+)["']?\s*:\s*["'`]([^"'`]+)["'`]/g;
+  let m;
+  while ((m = re.exec(t))) cfg[m[1]] = m[2];
+  if (!cfg.apiKey || !cfg.projectId) throw new Error('bad');
+  if (!cfg.databaseURL) cfg.databaseURL = `https://${cfg.projectId}-default-rtdb.firebaseio.com`;
+  return cfg;
+}
+
+async function init() {
+  try {
+    const cfg = await loadConfig();
+    const A = await import(`https://www.gstatic.com/firebasejs/${FB_VER}/firebase-app.js`);
+    fb = await import(`https://www.gstatic.com/firebasejs/${FB_VER}/firebase-database.js`);
+    db = fb.getDatabase(A.initializeApp(cfg));
+  } catch (e) { renderSetup(e.message); return; }
+  const h = location.hash.slice(1).toUpperCase();
+  if (h && h === LS.get('cd_room')) { tryRejoin(h); return; }
+  renderHome(h);
+}
+
+function renderSetup(reason) {
+  const msg = reason === 'nofile'
+    ? 'Falta el archivo config.txt junto a index.html.'
+    : reason === 'bad'
+      ? 'He encontrado config.txt, pero no tiene apiKey y projectId.'
+      : 'No he podido conectar con Firebase. Revisa config.txt y tu conexión.';
+  app.innerHTML = `
+    <header class="brand"><div class="die mini">?</div><h1>Crucidados</h1></header>
+    <div class="setup">
+      <p><strong>${msg}</strong></p>
+      <ol>
+        <li>En tu repositorio de GitHub pulsa <em>Add file → Create new file</em>.</li>
+        <li>Llámalo <code>config.txt</code>.</li>
+        <li>Pega dentro el bloque de configuración que te da Firebase (el que empieza por <code>const firebaseConfig = {</code>).</li>
+        <li>Guarda con <em>Commit changes</em>, espera un minuto y recarga esta página.</li>
+      </ol>
+    </div>`;
+}
+
+/* ---------- inicio ---------- */
+function renderHome(prefill = '', err = '') {
+  const last = LS.get('cd_room');
+  app.innerHTML = `
+    <header class="brand"><div class="die mini">3</div><h1>Crucidados</h1></header>
+    <p class="lead">Tira el dado, di letras y forma palabras como en un crucigrama. Todos escriben las mismas letras, cada uno donde quiere.</p>
+    <label class="field"><span>Tu nombre</span><input id="name" maxlength="14" value="${esc(myName)}" autocomplete="nickname"></label>
+    <button class="btn primary" data-a="create">Crear partida</button>
+    <div class="join">
+      <input id="code" maxlength="4" placeholder="CÓDIGO" value="${esc(prefill)}" autocapitalize="characters" autocomplete="off">
+      <button class="btn" data-a="join">Unirme</button>
+    </div>
+    ${last ? `<button class="btn ghost" data-a="rejoin">Volver a la partida ${esc(last)}</button>` : ''}
+    <p class="err">${esc(err)}</p>
+    <details class="rules"><summary>Cómo se juega</summary>
+      <p>Cada uno tiene una cuadrícula de 8×8. Por turnos, un jugador tira el dado:</p>
+      <p><strong>0</strong>: pierde el turno. <strong>1, 2 o 3</strong>: elige ese número de letras (o casillas negras ■ para separar palabras). <strong>★</strong>: sale una letra al azar.</p>
+      <p>Todos colocan esas mismas letras donde quieran de su cuadrícula. Elige letras que te vengan bien a ti y fatal a los demás.</p>
+      <p>Cuando la cuadrícula está llena, cada palabra completa de 2 letras o más (de izquierda a derecha o de arriba abajo) vale 1 punto por letra. Si sobra una letra, la palabra entera no vale. Palabra más larga: +5. Más palabras: +3.</p>
+    </details>`;
+  const ci = document.getElementById('code');
+  ci.addEventListener('keydown', e => { if (e.key === 'Enter') joinRoom(ci.value); });
+}
+
+function getName() {
+  const el = document.getElementById('name');
+  const n = (el ? el.value : myName).trim().slice(0, 14);
+  if (!n) { renderHome(document.getElementById('code')?.value || '', 'Escribe tu nombre primero.'); return null; }
+  myName = n; LS.set('cd_name', n);
+  return n;
+}
+
+async function createRoom() {
+  const n = getName(); if (!n) return;
+  try {
+    let c;
+    for (let i = 0; i < 10; i++) {
+      c = randCode();
+      const s = await fb.get(fb.ref(db, 'rooms/' + c));
+      if (!s.exists()) break;
+    }
+    await fb.set(fb.ref(db, 'rooms/' + c), {
+      host: pid, status: 'lobby', created: Date.now(),
+      players: { [pid]: { name: n, t: Date.now() } }
+    });
+    enterRoom(c);
+  } catch (e) { renderHome('', 'No he podido crear la partida. Revisa las reglas de la base de datos en Firebase.'); }
+}
+
+async function joinRoom(raw) {
+  const c = String(raw || '').trim().toUpperCase();
+  const n = getName(); if (!n) return;
+  if (c.length !== 4) return renderHome(c, 'El código tiene 4 letras.');
+  try {
+    const s = await fb.get(fb.ref(db, 'rooms/' + c));
+    if (!s.exists()) return renderHome(c, 'No existe ninguna partida con ese código.');
+    const r = s.val();
+    if (r.players && r.players[pid]) {
+      if (r.status === 'lobby') await fb.update(fb.ref(db, `rooms/${c}/players/${pid}`), { name: n });
+      return enterRoom(c);
+    }
+    if (r.status !== 'lobby') return renderHome(c, 'Esa partida ya ha empezado.');
+    if (Object.keys(r.players || {}).length >= MAX_PLAYERS) return renderHome(c, 'La partida está llena.');
+    await fb.set(fb.ref(db, `rooms/${c}/players/${pid}`), { name: n, t: Date.now() });
+    enterRoom(c);
+  } catch (e) { renderHome(c, 'No he podido entrar. Revisa tu conexión.'); }
+}
+
+async function tryRejoin(c) {
+  try {
+    const s = await fb.get(fb.ref(db, 'rooms/' + c));
+    if (s.exists() && s.val().players?.[pid]) return enterRoom(c);
+  } catch (e) {}
+  LS.set('cd_room', null);
+  renderHome(c);
+}
+
+function enterRoom(c) {
+  code = c; LS.set('cd_room', c);
+  history.replaceState(null, '', '#' + c);
+  if (unsub) unsub();
+  unsub = fb.onValue(roomRef(), snap => {
+    room = snap.val();
+    if (!room || !room.players?.[pid]) { leaveLocal('La partida ya no existe o te han sacado.'); return; }
+    render();
+  });
+}
+
+function leaveLocal(err = '') {
+  if (unsub) unsub(); unsub = null;
+  room = null; code = null; LS.set('cd_room', null);
+  history.replaceState(null, '', location.pathname);
+  releaseWake();
+  renderHome('', err);
+}
+
+async function leaveRoom() {
+  const c = code, r = room;
+  try {
+    const others = Object.keys(r.players).filter(p => p !== pid);
+    if (others.length === 0) await fb.remove(fb.ref(db, 'rooms/' + c));
+    else {
+      const upd = { [`players/${pid}`]: null };
+      if (r.host === pid) upd.host = others[0];
+      await fb.update(fb.ref(db, 'rooms/' + c), upd);
+    }
+  } catch (e) {}
+  leaveLocal();
+}
+
+/* ---------- render principal ---------- */
+function render() {
+  if (room.status === 'lobby') renderLobby();
+  else if (room.status === 'playing') renderGame();
+  else if (room.status === 'scoring') renderScoring();
+  else if (room.status === 'results') renderResults();
+}
+
+function renderLobby() {
+  resultsSet = false; advancingSeq = null;
+  const ids = Object.keys(room.players).sort((a, b) => room.players[a].t - room.players[b].t);
+  const isHost = room.host === pid;
+  app.innerHTML = `
+    <div class="top"><h1>Crucidados</h1></div>
+    <p class="lead">Código de la partida</p>
+    <p style="font:700 52px Rubik,system-ui,sans-serif;letter-spacing:.18em;color:var(--ink);margin:-14px 0 6px">${esc(code)}</p>
+    <button class="btn" data-a="share">Invitar a amigos</button>
+    <h2>Jugadores (${ids.length}/${MAX_PLAYERS})</h2>
+    <ul class="list">
+      ${ids.map(p => `<li><span>${esc(nameOf(p))}${p === room.host ? ' <span class="muted">(anfitrión)</span>' : ''}${p === pid ? ' <span class="muted">(tú)</span>' : ''}</span>
+        ${isHost && p !== pid ? `<button class="x" data-a="kick" data-p="${p}" aria-label="Sacar a ${esc(nameOf(p))}">×</button>` : ''}</li>`).join('')}
+    </ul>
+    ${isHost
+      ? `<button class="btn primary" data-a="start">Empezar partida</button>`
+      : `<p class="muted" style="margin-top:16px">Esperando a que ${esc(nameOf(room.host))} empiece la partida…</p>`}
+    <button class="btn ghost" data-a="leave">Salir</button>`;
+}
+
+async function share() {
+  const url = location.origin + location.pathname + '#' + code;
+  const text = `Juega a Crucidados conmigo. Código: ${code}`;
+  try {
+    if (navigator.share) { await navigator.share({ title: 'Crucidados', text, url }); return; }
+  } catch (e) { return; }
+  try { await navigator.clipboard.writeText(text + '\n' + url); alert('Enlace copiado'); }
+  catch (e) { prompt('Copia este enlace:', url); }
+}
+
+async function startGame() {
+  const ids = shuffle(Object.keys(room.players));
+  const boards = {}; ids.forEach(p => boards[p] = EMPTY);
+  await fb.update(roomRef(), {
+    status: 'playing', order: ids, boards, ready: null, invalid: null, done: null,
+    turn: { seq: 1, idx: 0, phase: 'roll', msg: `Empieza ${nameOf(ids[0])}` }
+  });
+}
+
+/* ---------- partida ---------- */
+function renderGame() {
+  keepAwake();
+  const t = room.turn, order = room.order || [];
+  const active = order[t.idx];
+  const isActive = active === pid, isHost = room.host === pid;
+  const canAct = isActive || (isHost && local.actFor);
+  if (local.seq !== t.seq || local.phase !== t.phase) {
+    if (local.seq !== t.seq) { local.placed = {}; local.sel = 0; local.actFor = false; }
+    local.chosen = []; local.seq = t.seq; local.phase = t.phase;
+  }
+  const myBoard = room.boards?.[pid] || EMPTY;
+  const iReady = room.ready?.[pid] === t.seq;
+  const notReady = order.filter(p => room.ready?.[p] !== t.seq);
+
+  // si todos han colocado, cualquiera puede pasar el turno (la transacción evita duplicados)
+  if (t.phase === 'place' && notReady.length === 0 && advancingSeq !== t.seq) { advancingSeq = t.seq; advance(false); }
+
+  // tablero con colocaciones locales sin confirmar
+  const cells = myBoard.split('');
+  const fresh = new Set();
+  if (t.phase === 'place' && !iReady) {
+    Object.entries(local.placed).forEach(([li, ci]) => { cells[ci] = t.letters[li]; fresh.add(+ci); });
+  }
+  const placing = t.phase === 'place' && !iReady;
+
+  let status;
+  if (t.phase === 'roll') status = isActive ? 'Te toca tirar' : `Le toca tirar a ${esc(nameOf(active))}`;
+  else if (t.phase === 'choose') status = isActive ? `Elige ${t.k} ${t.k === 1 ? 'letra' : 'letras'}` : `${esc(nameOf(active))} está eligiendo…`;
+  else status = iReady ? `Esperando a ${notReady.map(p => esc(nameOf(p))).join(', ')}` : 'Coloca las letras';
+
+  const dieFace = t.die === undefined ? '·' : t.die;
+  const animate = t.rollId && t.rollId !== lastRollSeen;
+  lastRollSeen = t.rollId || lastRollSeen;
+  const dieTap = t.phase === 'roll' && canAct;
+
+  let panel = '';
+  if (t.phase === 'roll' && canAct) {
+    panel = `<p class="hint">Toca el dado para tirar${!isActive ? ` por ${esc(nameOf(active))}` : ''}</p>`;
+  } else if (t.phase === 'choose' && canAct) {
+    const slots = Array.from({ length: t.k }, (_, i) => local.chosen[i]
+      ? `<button class="chip" data-a="unchoose" data-i="${i}" aria-label="Quitar">${show(local.chosen[i])}</button>`
+      : `<span class="chip empty">?</span>`).join('');
+    const full = local.chosen.length >= t.k;
+    panel = `
+      <p class="hint">Todos tendrán que escribir estas letras</p>
+      <div class="tray">${slots}</div>
+      <div class="kb">
+        ${LETTERS.map(L => `<button class="key" data-a="choose" data-l="${L}" ${full ? 'disabled' : ''}>${L}</button>`).join('')}
+        <button class="key sp" data-a="choose" data-l="#" ${full ? 'disabled' : ''}>■ casilla negra</button>
+      </div>
+      <button class="btn primary" data-a="say" ${full ? '' : 'disabled'}>Decir ${t.k === 1 ? 'esta letra' : 'estas letras'}</button>`;
+  } else if (placing) {
+    const allPlaced = t.letters.every((_, i) => local.placed[i] !== undefined);
+    panel = `
+      <p class="hint">${allPlaced ? 'Toca una letra amarilla del tablero para moverla' : 'Elige una ficha y toca una casilla vacía'}</p>
+      <div class="tray">${t.letters.map((L, i) => `<button class="chip ${local.placed[i] !== undefined ? 'used' : ''} ${local.sel === i && local.placed[i] === undefined ? 'sel' : ''}" data-a="pick" data-i="${i}">${show(L)}</button>`).join('')}</div>
+      <button class="btn primary" data-a="confirm" ${allPlaced ? '' : 'disabled'}>Confirmar</button>`;
+  }
+  let hostTools = '';
+  if (isHost && !isActive && (t.phase === 'roll' || t.phase === 'choose') && !local.actFor) {
+    hostTools = `<button class="btn ghost small" data-a="actfor">¿${esc(nameOf(active))} no está? Jugar por su turno</button>`;
+  }
+  if (isHost && t.phase === 'place' && iReady && notReady.length) {
+    hostTools = `<button class="btn ghost small" data-a="force">Colocar automáticamente por quien falta</button>`;
+  }
+
+  app.innerHTML = `
+    <div class="top"><span class="code">${esc(code)}</span><span class="muted" style="font-size:14px">${countEmpty(myBoard)} casillas libres</span></div>
+    <div class="players">${order.map(p => `<span class="pl ${p === active ? 'on' : ''} ${t.phase === 'place' && room.ready?.[p] === t.seq ? 'ok' : ''}">${esc(nameOf(p))}</span>`).join('')}</div>
+    <div class="turn">
+      <button class="die ${animate ? 'roll' : ''} ${dieTap ? 'tap' : ''}" ${dieTap ? 'data-a="roll"' : 'disabled'} aria-label="Dado">${dieFace}</button>
+      <div><p class="status">${status}</p><p class="msg">${esc(t.msg || '')}</p></div>
+    </div>
+    <div class="board">${cells.map((ch, i) => {
+      const open = placing && ch === '.';
+      const cls = ['cell', ch === '#' ? 'sp' : '', fresh.has(i) ? 'fresh' : '', open || fresh.has(i) ? 'open' : ''].join(' ');
+      const inner = ch === '.' || ch === '#' ? '' : ch;
+      return (open || fresh.has(i))
+        ? `<button class="${cls}" data-a="cell" data-c="${i}" aria-label="Casilla ${i + 1}">${inner}</button>`
+        : `<div class="${cls}">${inner}</div>`;
+    }).join('')}</div>
+    <div class="panel">${panel}${hostTools}</div>`;
+}
+
+function roll() {
+  const seq = room.turn.seq;
+  const remaining = countEmpty(room.boards?.[pid]);
+  const n = room.order.length;
+  const actorName = nameOf(room.order[room.turn.idx]);
+  fb.runTransaction(roomRef('turn'), t => {
+    if (!t || t.seq !== seq || t.phase !== 'roll') return;
+    const face = FACES[randInt(FACES.length)];
+    const rollId = Math.random().toString(36).slice(2, 8);
+    if (face === 0) {
+      const ni = (t.idx + 1) % n;
+      return { seq: t.seq + 1, idx: ni, phase: 'roll', die: 0, rollId, msg: `${actorName} sacó un 0 y pasa el turno` };
+    }
+    if (face === '★') {
+      const L = randLetter();
+      return { ...t, phase: 'place', die: '★', rollId, letters: [L], msg: `${actorName} sacó ★, letra al azar: ${L}` };
+    }
+    return { ...t, phase: 'choose', die: face, k: Math.min(face, remaining), rollId, msg: `${actorName} sacó un ${face}` };
+  });
+}
+
+function say() {
+  const seq = room.turn.seq, letters = [...local.chosen];
+  const actorName = nameOf(room.order[room.turn.idx]);
+  fb.runTransaction(roomRef('turn'), t => {
+    if (!t || t.seq !== seq || t.phase !== 'choose' || letters.length !== t.k) return;
+    return { ...t, phase: 'place', letters, msg: `${actorName} dijo ${letters.map(show).join(' ')}` };
+  });
+}
+
+function clickCell(ci) {
+  const t = room.turn;
+  const placedAt = Object.entries(local.placed).find(([, c]) => c === ci);
+  if (placedAt) { delete local.placed[placedAt[0]]; local.sel = +placedAt[0]; renderGame(); return; }
+  if (local.placed[local.sel] !== undefined) {
+    const next = t.letters.findIndex((_, i) => local.placed[i] === undefined);
+    if (next < 0) return;
+    local.sel = next;
+  }
+  local.placed[local.sel] = ci;
+  const next = t.letters.findIndex((_, i) => local.placed[i] === undefined);
+  local.sel = next < 0 ? 0 : next;
+  renderGame();
+}
+
+async function confirmPlace() {
+  const t = room.turn;
+  if (room.ready?.[pid] === t.seq) return;
+  const b = (room.boards?.[pid] || EMPTY).split('');
+  for (let i = 0; i < t.letters.length; i++) {
+    const c = local.placed[i];
+    if (c === undefined || b[c] !== '.') return;
+    b[c] = t.letters[i];
+  }
+  await fb.update(roomRef(), { [`boards/${pid}`]: b.join(''), [`ready/${pid}`]: t.seq });
+  advance(false);
+}
+
+function advance(force) {
+  fb.runTransaction(roomRef(), r => {
+    if (!r || r.status !== 'playing' || !r.turn || r.turn.phase !== 'place') return;
+    const t = r.turn, ord = r.order;
+    r.ready = r.ready || {}; r.boards = r.boards || {};
+    for (const p of ord) {
+      if (r.ready[p] !== t.seq) {
+        if (!force) return;
+        const b = (r.boards[p] || EMPTY).split('');
+        for (const L of t.letters) { const i = b.indexOf('.'); if (i >= 0) b[i] = L; }
+        r.boards[p] = b.join(''); r.ready[p] = t.seq;
+      }
+    }
+    if (countEmpty(r.boards[ord[0]]) === 0) {
+      r.status = 'scoring';
+      r.turn = { ...t, phase: 'end' };
+    } else {
+      const ni = (t.idx + 1) % ord.length;
+      r.turn = { seq: t.seq + 1, idx: ni, phase: 'roll', die: t.die, rollId: t.rollId, msg: t.msg };
+    }
+    return r;
+  });
+}
+
+/* ---------- puntuación ---------- */
+function findWords(b) {
+  const out = [], isL = ch => ch && ch !== '#' && ch !== '.';
+  for (const dir of ['h', 'v']) {
+    for (let a = 0; a < 8; a++) {
+      let run = [];
+      for (let k = 0; k <= 8; k++) {
+        const idx = dir === 'h' ? a * 8 + k : k * 8 + a;
+        if (k < 8 && isL(b[idx])) run.push(idx);
+        else {
+          if (run.length >= 2) out.push({ id: dir + run[0], cells: run, text: run.map(i => b[i]).join('') });
+          run = [];
+        }
+      }
+    }
+  }
+  return out;
+}
+
+function scoreOf(p) {
+  const b = room.boards?.[p] || EMPTY;
+  const inv = room.invalid?.[p] || {};
+  const valid = findWords(b).filter(w => !inv[w.id]);
+  return {
+    valid, letters: valid.reduce((s, w) => s + w.text.length, 0),
+    longest: valid.reduce((m, w) => Math.max(m, w.text.length), 0), count: valid.length
+  };
+}
+
+function boardHTML(p, mini, highlight) {
+  const b = room.boards?.[p] || EMPTY;
+  const inWord = new Set();
+  if (highlight) scoreOf(p).valid.forEach(w => w.cells.forEach(c => inWord.add(c)));
+  return `<div class="board ${mini ? 'mini' : ''}">${b.split('').map((ch, i) =>
+    `<div class="cell ${ch === '#' ? 'sp' : ''} ${inWord.has(i) ? 'inword' : ''}">${ch === '#' || ch === '.' ? '' : ch}</div>`).join('')}</div>`;
+}
+
+function renderScoring() {
+  releaseWake();
+  const order = room.order, isHost = room.host === pid;
+  const done = room.done || {};
+  const pending = order.filter(p => !done[p]);
+  if (pending.length === 0 && !resultsSet) { resultsSet = true; fb.update(roomRef(), { status: 'results' }); }
+  const mine = findWords(room.boards?.[pid] || EMPTY);
+  const inv = room.invalid?.[pid] || {};
+  const iDone = !!done[pid];
+  const others = order.filter(p => p !== pid);
+  app.innerHTML = `
+    <div class="top"><h1>Revisión</h1><span class="code">${esc(code)}</span></div>
+    <p class="muted">Tacha las palabras que no existan en español. Los demás ven tu lista, así que nada de trampas.</p>
+    ${boardHTML(pid, false, true)}
+    <h2>Tus palabras</h2>
+    ${mine.length ? `<div class="words">${mine.map(w => `<button class="word ${inv[w.id] ? 'no' : ''}" data-a="toggle" data-w="${w.id}" ${iDone ? 'disabled' : ''}>${w.text}</button>`).join('')}</div>`
+      : '<p class="muted">No hay ninguna secuencia de 2 letras o más.</p>'}
+    ${iDone
+      ? `<p class="muted" style="margin-top:14px">Esperando a ${pending.map(p => esc(nameOf(p))).join(', ')}</p>
+         <button class="btn ghost small" data-a="undone">Volver a revisar</button>`
+      : `<button class="btn primary" data-a="done">He terminado de revisar</button>`}
+    ${isHost && !iDone ? '' : isHost && pending.length ? `<button class="btn ghost small" data-a="toresults">Ver resultados ya</button>` : ''}
+    ${others.length ? `<h2>Palabras de los demás</h2>${others.map(p => {
+      const ws = findWords(room.boards?.[p] || EMPTY), iv = room.invalid?.[p] || {};
+      return `<p style="margin:14px 0 6px"><strong>${esc(nameOf(p))}</strong>${done[p] ? ' <span class="muted">✓</span>' : ''}</p>
+        <div class="words">${ws.length ? ws.map(w => `<span class="word ${iv[w.id] ? 'no' : ''}" disabled>${w.text}</span>`).join('') : '<span class="muted">Ninguna</span>'}</div>`;
+    }).join('')}` : ''}`;
+}
+
+function renderResults() {
+  releaseWake();
+  const order = room.order;
+  const s = Object.fromEntries(order.map(p => [p, scoreOf(p)]));
+  const maxLong = Math.max(0, ...order.map(p => s[p].longest));
+  const maxCount = Math.max(0, ...order.map(p => s[p].count));
+  const rows = order.map(p => {
+    const bLong = maxLong > 0 && s[p].longest === maxLong ? 5 : 0;
+    const bCount = maxCount > 0 && s[p].count === maxCount ? 3 : 0;
+    return { p, ...s[p], bLong, bCount, total: s[p].letters + bLong + bCount };
+  }).sort((a, b) => b.total - a.total);
+  const top = rows[0]?.total;
+  const isHost = room.host === pid;
+  app.innerHTML = `
+    <div class="top"><h1>Resultados</h1><span class="code">${esc(code)}</span></div>
+    ${rows.map(r => `
+      <div class="rank ${r.total === top ? 'first' : ''}">
+        <div class="head"><strong style="font-size:19px">${r.total === top ? '🏆 ' : ''}${esc(nameOf(r.p))}</strong><span class="pts">${r.total}</span></div>
+        <p class="why">${r.letters} por letras en ${r.count} ${r.count === 1 ? 'palabra' : 'palabras'}${r.bLong ? ', +5 palabra más larga' : ''}${r.bCount ? ', +3 más palabras' : ''}</p>
+        <details><summary class="muted" style="margin-top:8px;cursor:pointer">Ver cuadrícula</summary>
+          ${boardHTML(r.p, true, true)}
+          <div class="words" style="justify-content:center">${r.valid.map(w => `<span class="word" disabled>${w.text}</span>`).join('')}</div>
+        </details>
+      </div>`).join('')}
+    ${isHost ? `<button class="btn primary" data-a="again">Jugar otra vez</button>` : `<p class="muted">${esc(nameOf(room.host))} puede empezar otra partida.</p>`}
+    <button class="btn ghost" data-a="leave">Salir</button>`;
+}
+
+/* ---------- pantalla encendida durante la partida ---------- */
+async function keepAwake() {
+  if (wakeLock || !('wakeLock' in navigator)) return;
+  try { wakeLock = await navigator.wakeLock.request('screen'); wakeLock.addEventListener('release', () => { wakeLock = null; }); } catch (e) {}
+}
+function releaseWake() { if (wakeLock) { wakeLock.release().catch(() => {}); wakeLock = null; } }
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && room?.status === 'playing') keepAwake(); });
+
+/* ---------- eventos ---------- */
+app.addEventListener('click', e => {
+  const el = e.target.closest('[data-a]');
+  if (!el || el.disabled) return;
+  const a = el.dataset.a;
+  switch (a) {
+    case 'create': createRoom(); break;
+    case 'join': joinRoom(document.getElementById('code').value); break;
+    case 'rejoin': getName() && tryRejoin(LS.get('cd_room')); break;
+    case 'share': share(); break;
+    case 'kick': fb.update(roomRef(), { [`players/${el.dataset.p}`]: null }); break;
+    case 'start': startGame(); break;
+    case 'leave': leaveRoom(); break;
+    case 'roll': roll(); break;
+    case 'actfor': local.actFor = true; renderGame(); break;
+    case 'choose': if (local.chosen.length < room.turn.k) { local.chosen.push(el.dataset.l); renderGame(); } break;
+    case 'unchoose': local.chosen.splice(+el.dataset.i, 1); renderGame(); break;
+    case 'say': say(); break;
+    case 'pick': {
+      const i = +el.dataset.i;
+      if (local.placed[i] !== undefined) delete local.placed[i];
+      local.sel = i; renderGame(); break;
+    }
+    case 'cell': clickCell(+el.dataset.c); break;
+    case 'confirm': confirmPlace(); break;
+    case 'force': advance(true); break;
+    case 'toggle': {
+      const w = el.dataset.w, cur = room.invalid?.[pid]?.[w];
+      fb.update(roomRef(), { [`invalid/${pid}/${w}`]: cur ? null : true }); break;
+    }
+    case 'done': fb.update(roomRef(), { [`done/${pid}`]: true }); break;
+    case 'undone': fb.update(roomRef(), { [`done/${pid}`]: null }); break;
+    case 'toresults': fb.update(roomRef(), { status: 'results' }); break;
+    case 'again':
+      fb.update(roomRef(), { status: 'lobby', order: null, boards: null, ready: null, invalid: null, done: null, turn: null });
+      break;
+  }
+});
+
+init();
+</script>
+</body>
+</html>
