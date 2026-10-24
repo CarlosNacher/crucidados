@@ -1,0 +1,9 @@
+const firebaseConfig = {
+  apiKey: "AIzaSyA82r7mt4NCsfs7l5pOU1Ihd62XY-Dj9ww",
+  authDomain: "crucidados.firebaseapp.com",
+  databaseURL: "https://crucidados-default-rtdb.firebaseio.com",
+  projectId: "crucidados",
+  storageBucket: "crucidados.firebasestorage.app",
+  messagingSenderId: "474299131379",
+  appId: "1:474299131379:web:844d1c6cb1aeb1031d9e86"
+};
